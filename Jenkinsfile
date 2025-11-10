@@ -2,7 +2,7 @@ pipeline {
     agent any 
     
     environment {
-        ALLURE_SERVER_ID = 'testops' 
+        ALLURE_SERVER_ID = 'anny_testops' 
         ALLURE_CREDENTIALS_ID = 'anny_testops' 
         ALLURE_PROJECT_ID = '1878' 
         ALLURE_RESULTS_PATH = 'build/allure-results' 
