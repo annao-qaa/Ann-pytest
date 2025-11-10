@@ -2,7 +2,6 @@ import allure
 import pytest
 from allure_commons.types import AttachmentType
 
-# Тест 1: Логин в систему
 @allure.title("Тест 1: Логин в систему для оплаты")
 @allure.step("Шаг 1: Открыть страницу логина")
 def step_login_open_page():
@@ -22,7 +21,6 @@ def test_login_for_payment():
     step_login_submit()
     assert True, "Логин прошёл"
 
-# Тест 2: Добавление товара в корзину
 @allure.title("Тест 2: Добавление товара в корзину перед оплатой")
 @allure.step("Шаг 1: Открыть страницу товара")
 def step_add_product_open():
@@ -42,7 +40,6 @@ def test_add_product_to_cart():
     step_add_product_check_cart()
     assert True, "Товар в корзине"
 
-# Тест 3: Переход к оплате
 @allure.title("Тест 3: Переход к оплате из корзины")
 @allure.step("Шаг 1: Открыть корзину")
 def step_checkout_open_cart():
@@ -62,7 +59,6 @@ def test_checkout_from_cart():
     step_checkout_verify_page()
     assert True, "Переход к оплате успешен"
 
-# Тест 4: Выбор метода оплаты
 @allure.title("Тест 4: Выбор метода оплаты")
 @allure.step("Шаг 1: Открыть страницу методов оплаты")
 def step_payment_method_open():
@@ -82,7 +78,6 @@ def test_select_payment_method():
     step_payment_method_confirm()
     assert True, "Метод оплаты выбран"
 
-# Тест 5: Подтверждение оплаты
 @allure.title("Тест 5: Подтверждение оплаты")
 @allure.step("Шаг 1: Ввести данные карты")
 def step_payment_enter_details():
