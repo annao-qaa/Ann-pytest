@@ -1,8 +1,7 @@
 pipeline {
-    agent any
+    agent any 
     
     environment {
-        
         ALLURE_SERVER_ID = 'testops' 
         ALLURE_CREDENTIALS_ID = 'anny_testops' 
         ALLURE_PROJECT_ID = '1878' 
@@ -12,22 +11,17 @@ pipeline {
     stages {
         stage('Setup and Run Tests') {
             steps {
-                script {
-                    sh 'pip install -r requirements.txt'
+                sh 'pip install -r requirements.txt'
+                sh "mkdir -p ${env.ALLURE_RESULTS_PATH}"
 
-                    sh "mkdir -p ${env.ALLURE_RESULTS_PATH}"
-
-                    withAllureUpload(
-                        serverId: env.ALLURE_SERVER_ID,
-                        credentialsId: env.ALLURE_CREDENTIALS_ID,
-                        projectId: env.ALLURE_PROJECT_ID,
-                        results: [[path: env.ALLURE_RESULTS_PATH]]
-                    ) {
-                        echo "--- Запуск тестов и первая отправка через withAllureUpload ---"
-
-                        sh "pytest --alluredir=${env.ALLURE_RESULTS_PATH} || true"
-
-                    }
+                withAllureUpload(
+                    serverId: env.ALLURE_SERVER_ID,
+                    credentialsId: env.ALLURE_CREDENTIALS_ID,
+                    projectId: env.ALLURE_PROJECT_ID,
+                    results: [[path: env.ALLURE_RESULTS_PATH]]
+                ) {
+                    echo "--- Запуск тестов и первая отправка через withAllureUpload ---"
+                    sh "pytest --alluredir=${env.ALLURE_RESULTS_PATH} || true"
                 }
             }
         }
@@ -39,7 +33,7 @@ pipeline {
             allure includeProperties: false, 
                    results: [[path: env.ALLURE_RESULTS_PATH]]
                    
-            echo 'Вторая обработка завершена. Проверь TestOps на наличие дубликатов.'
+            echo 'Проверка TestOps на дубликаты завершена.'
         }
     }
 }
