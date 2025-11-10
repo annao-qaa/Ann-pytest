@@ -1,5 +1,5 @@
 pipeline {
-    agent any 
+    agent { label 'Jenkins' }
     
     environment {
         ALLURE_SERVER_ID = 'anny_testops' 
