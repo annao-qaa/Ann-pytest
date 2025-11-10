@@ -2,9 +2,11 @@ name: Allure Conflict Demo (GitHub Actions)
 
 on:
   workflow_dispatch:
+    # Позволяет запускать вручную через вкладку Actions
   
 env:
   ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
+  # ЭНДПОИНТ ВАШЕГО КОРПОРАТИВНОГО TESTOPS
   ALLURE_ENDPOINT: https://testing.qatools.cloud 
   ALLURE_PROJECT_ID: 1878
   ALLURE_RESULTS: build/allure-results
@@ -22,6 +24,7 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Setup AllureCTL
+        # Устанавливает allurectl - инструмент для публикации в TestOps
         uses: allure-framework/setup-allurectl@v1
         id: allurectl
         with:
@@ -29,22 +32,27 @@ jobs:
           allure-token: ${{ env.ALLURE_TOKEN }}
           allure-project-id: ${{ env.ALLURE_PROJECT_ID }}
           
-      - name: Run Tests and First Upload
+      - name: Run Tests and First Upload (Конфликт, Шаг 1)
         id: run_tests
         run: |
+          # 1. Создание папки для результатов
           mkdir -p ${{ env.ALLURE_RESULTS }}
+          
+          # 2. Запуск тестов (создаст .json файлы в папке)
           pytest --alluredir=${{ env.ALLURE_RESULTS }} || true
           
-          # ПЕРВАЯ ОТПРАВКА: УБРАЛИ --force
-          allurectl upload --launch-name "Conflict Demo Run"
+          # 3. ПЕРВАЯ ОТПРАВКА: Имитация withAllureUpload
+          # Указываем allurectl, какую папку отправлять
+          allurectl upload ${{ env.ALLURE_RESULTS }} --launch-name "Conflict Demo Run"
         env:
           ALLURE_RESULTS: ${{ env.ALLURE_RESULTS }}
 
-      - name: Second Conflict Upload
-        if: always()
+      - name: Second Conflict Upload (Конфликт, Шаг 2)
+        if: always() # Имитация блока post { always } в Jenkins
         run: |
           echo "--- Имитация конфликта: Вторая публикация ---"
-          # ВТОРАЯ ОТПРАВКА: УБРАЛИ --force
-          allurectl upload --launch-name "Conflict Demo Run"
+          # ВТОРАЯ ОТПРАВКА: Имитация allure includeProperties: false, 
+          # которая снова отправляет те же файлы.
+          allurectl upload ${{ env.ALLURE_RESULTS }} --launch-name "Conflict Demo Run"
         env:
           ALLURE_RESULTS: ${{ env.ALLURE_RESULTS }}
