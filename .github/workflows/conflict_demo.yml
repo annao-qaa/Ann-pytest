@@ -2,11 +2,9 @@ name: Allure Conflict Demo (GitHub Actions)
 
 on:
   workflow_dispatch:
-    # Позволяет запускать вручную через веб-интерфейс
   
 env:
   ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
-  # ИСПРАВЛЕНО: Эндпоинт вашего TestOps
   ALLURE_ENDPOINT: https://testing.qatools.cloud 
   ALLURE_PROJECT_ID: 1878
   ALLURE_RESULTS: build/allure-results
@@ -35,18 +33,18 @@ jobs:
         id: run_tests
         run: |
           mkdir -p ${{ env.ALLURE_RESULTS }}
-          # 1. Запуск тестов для создания результатов
           pytest --alluredir=${{ env.ALLURE_RESULTS }} || true
           
-          # 2. ПЕРВАЯ ОТПРАВКА: Имитация withAllureUpload
-          allurectl upload --launch-name "Conflict Demo Run" --force
+          # ПЕРВАЯ ОТПРАВКА: УБРАЛИ --force
+          allurectl upload --launch-name "Conflict Demo Run"
         env:
           ALLURE_RESULTS: ${{ env.ALLURE_RESULTS }}
 
       - name: Second Conflict Upload
-        if: always() # 3. ВТОРАЯ ОТПРАВКА: Имитация allure includeProperties: false в post { always }
+        if: always()
         run: |
           echo "--- Имитация конфликта: Вторая публикация ---"
-          allurectl upload --launch-name "Conflict Demo Run" --force
+          # ВТОРАЯ ОТПРАВКА: УБРАЛИ --force
+          allurectl upload --launch-name "Conflict Demo Run"
         env:
           ALLURE_RESULTS: ${{ env.ALLURE_RESULTS }}
