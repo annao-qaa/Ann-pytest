@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'Jenkins' }
+    agent any 
     
     environment {
         ALLURE_SERVER_ID = 'anny_testops' 
@@ -9,19 +9,17 @@ pipeline {
     }
     
     stages {
-        stage('Setup and Run Tests') {
+        stage('Reproduce Conflict') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh "mkdir -p ${env.ALLURE_RESULTS_PATH}"
-
+                sh "mkdir -p ${env.ALLURE_RESULTS_PATH}" 
+                
                 withAllureUpload(
                     serverId: env.ALLURE_SERVER_ID,
                     credentialsId: env.ALLURE_CREDENTIALS_ID,
                     projectId: env.ALLURE_PROJECT_ID,
                     results: [[path: env.ALLURE_RESULTS_PATH]]
                 ) {
-                    echo "--- Запуск тестов и первая отправка через withAllureUpload ---"
-                    sh "pytest --alluredir=${env.ALLURE_RESULTS_PATH} || true"
+                    echo "--- ПЕРВАЯ ОТПРАВКА ---"
                 }
             }
         }
@@ -29,11 +27,11 @@ pipeline {
     
     post {
         always {
-            echo '--- Сработал блок post { always } - ВТОРАЯ ПУБЛИКАЦИЯ ---'
+            echo '--- ВТОРАЯ ОТПРАВКА: Конфликтный плагин ---'
             allure includeProperties: false, 
                    results: [[path: env.ALLURE_RESULTS_PATH]]
                    
-            echo 'Проверка TestOps на дубликаты завершена.'
+            echo 'Проверь TestOps на дублирование!'
         }
     }
 }
