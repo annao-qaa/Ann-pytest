@@ -2,9 +2,8 @@ name: Allure Conflict Demo (GitHub Actions)
 
 on:
   workflow_dispatch:
-    inputs: # <--- 2 пробела от on:
-      # Служебные параметры ТестОпс
-      ALLURE_JOB_RUN_ID: # <--- 4 пробела от inputs:
+    inputs:
+      ALLURE_JOB_RUN_ID:
         description: "TestOps service parameter. Leave blank"
         required: false 
       ALLURE_USERNAME:
