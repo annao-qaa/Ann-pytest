@@ -1,0 +1,89 @@
+name: TestOps Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      ALLURE_JOB_RUN_ID:
+        description: "TestOps service parameter for launch ID."
+        required: false
+      ALLURE_USERNAME:
+        description: "TestOps service parameter for user identity."
+        required: false
+
+      Branch:
+        description: "Branch or Tag to run on."
+        required: true
+        default: 'main'
+
+      ALLURE_LAUNCH_ID:
+        description: "Launch ID for filtering (optional)."
+        required: false
+      ALLURE_LAUNCH_NAME:
+        description: "Launch name for filtering (optional)."
+        required: false
+
+env:
+  ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
+  ALLURE_ENDPOINT: https://testing.qatools.cloud
+  ALLURE_PROJECT_ID: 1878
+  ALLURE_RESULTS: build/allure-results
+
+  ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
+  ALLURE_USERNAME: ${{ github.event.inputs.ALLURE_USERNAME }}
+  ALLURE_LAUNCH_ID: ${{ github.event.inputs.ALLURE_LAUNCH_ID }}
+  ALLURE_LAUNCH_NAME: ${{ github.event.inputs.ALLURE_LAUNCH_NAME }}
+
+jobs:
+  run_allure_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.Branch }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Setup AllureCTL
+        uses: allure-framework/setup-allurectl@v1
+        id: allurectl
+        with:
+          allure-endpoint: ${{ env.ALLURE_ENDPOINT }}
+          allure-token: ${{ env.ALLURE_TOKEN }}
+          allure-project-id: ${{ env.ALLURE_PROJECT_ID }}
+
+      - name: Run test 1 - Login
+        run: |
+          mkdir -p "${ALLURE_RESULTS}/test_1"
+          allurectl watch -- pytest tests/test_payment.py::test_login_for_payment --alluredir="${ALLURE_RESULTS}/test_1"
+          allurectl push --alluredir="${ALLURE_RESULTS}/test_1"
+
+      - name: Run test 2 - Add Product
+        run: |
+          mkdir -p "${ALLURE_RESULTS}/test_2"
+          allurectl watch -- pytest tests/test_payment.py::test_add_product_to_cart --alluredir="${ALLURE_RESULTS}/test_2"
+          allurectl push --alluredir="${ALLURE_RESULTS}/test_2"
+
+      - name: Run test 3 - Checkout
+        run: |
+          mkdir -p "${ALLURE_RESULTS}/test_3"
+          allurectl watch -- pytest tests/test_payment.py::test_checkout_from_cart --alluredir="${ALLURE_RESULTS}/test_3"
+          allurectl push --alluredir="${ALLURE_RESULTS}/test_3"
+
+      - name: Run test 4 - Payment Method
+        run: |
+          mkdir -p "${ALLURE_RESULTS}/test_4"
+          allurectl watch -- pytest tests/test_payment.py::test_select_payment_method --alluredir="${ALLURE_RESULTS}/test_4"
+          allurectl push --alluredir="${ALLURE_RESULTS}/test_4"
+
+      - name: Run test 5 - Confirm Payment
+        run: |
+          mkdir -p "${ALLURE_RESULTS}/test_5"
+          allurectl watch -- pytest tests/test_payment.py::test_confirm_payment --alluredir="${ALLURE_RESULTS}/test_5"
+          allurectl push --alluredir="${ALLURE_RESULTS}/test_5"
