@@ -21,7 +21,8 @@ env:
   ALLURE_ENDPOINT: https://testing.qatools.cloud
   ALLURE_PROJECT_ID: 1878
   ALLURE_RESULTS: build/allure-results
-
+  ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
+  
 jobs:
   test_and_conflict:
     runs-on: ubuntu-latest
