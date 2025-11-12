@@ -2,12 +2,24 @@ name: Allure Conflict Demo (GitHub Actions)
 
 on:
   workflow_dispatch:
-    # Позволяет запускать вручную через вкладку Actions
-  
+    inputs: # <--- 2 пробела от on:
+      # Служебные параметры ТестОпс
+      ALLURE_JOB_RUN_ID: # <--- 4 пробела от inputs:
+        description: "TestOps service parameter. Leave blank"
+        required: false 
+      ALLURE_USERNAME:
+        description: "TestOps service parameter. Leave blank"
+        required: false 
+
+     
+      Branch:
+        description: "Branch or Tag to run on"
+        required: true
+        default: 'main'
+        
 env:
   ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
-  # ЭНДПОИНТ ВАШЕГО КОРПОРАТИВНОГО TESTOPS
-  ALLURE_ENDPOINT: https://testing.qatools.cloud 
+  ALLURE_ENDPOINT: https://testing.qatools.cloud
   ALLURE_PROJECT_ID: 1878
   ALLURE_RESULTS: build/allure-results
 
@@ -16,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.Branch }}
 
       - name: Setup Python and Dependencies
         uses: actions/setup-python@v5
@@ -24,7 +38,6 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Setup AllureCTL
-        # Устанавливает allurectl - инструмент для публикации в TestOps
         uses: allure-framework/setup-allurectl@v1
         id: allurectl
         with:
@@ -48,7 +61,7 @@ jobs:
           ALLURE_RESULTS: ${{ env.ALLURE_RESULTS }}
 
       - name: Second Conflict Upload (Конфликт, Шаг 2)
-        if: always() # Имитация блока post { always } в Jenkins
+        if: always()
         run: |
           echo "--- Имитация конфликта: Вторая публикация ---"
           # ВТОРАЯ ОТПРАВКА: Имитация allure includeProperties: false, 
