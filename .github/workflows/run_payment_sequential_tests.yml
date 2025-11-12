@@ -36,6 +36,7 @@ env:
 jobs:
   run_allure_tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 0.35
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
