@@ -1,8 +1,9 @@
 import allure
 import pytest
-import time # <-- ДОБАВЛЕНО
+import time
 from allure_commons.types import AttachmentType
 
+# --- ШАГИ ТЕСТА 1 ---
 @allure.title("Тест 1: Логин в систему для оплаты")
 @allure.step("Шаг 1: Открыть страницу логина")
 def step_login_open_page():
@@ -16,13 +17,13 @@ def step_login_enter_creds():
 def step_login_submit():
     allure.attach("Вход выполнен", name="Подтверждение входа", attachment_type=AttachmentType.TEXT)
 
-def test_login_for_payment(): # ТЕСТ 1: УСПЕШНЫЙ
-    time.sleep(10) # <-- ДОБАВЛЕНО: Задержка для статуса
+def test_login_for_payment():
     step_login_open_page()
     step_login_enter_creds()
     step_login_submit()
     assert True, "Логин прошёл"
 
+# --- ШАГИ ТЕСТА 2 ---
 @allure.title("Тест 2: Добавление товара в корзину перед оплатой")
 @allure.step("Шаг 1: Открыть страницу товара")
 def step_add_product_open():
@@ -36,13 +37,13 @@ def step_add_product_click():
 def step_add_product_check_cart():
     allure.attach("Корзина: 1 товар", name="Содержимое корзины", attachment_type=AttachmentType.TEXT)
 
-def test_add_product_to_cart(): # ТЕСТ 2: ПРОВАЛЕННЫЙ
-    time.sleep(10) # <-- ДОБАВЛЕНО: Задержка
+def test_add_product_to_cart(): 
     step_add_product_open()
     step_add_product_click()
     step_add_product_check_cart()
-    assert False, "Искусственный провал для получения статуса Failed" # <-- ИЗМЕНЕНО НА FALSE
+    assert False, "Искусственный провал для получения статуса Failed"
 
+# --- ШАГИ ТЕСТА 3 ---
 @allure.title("Тест 3: Переход к оплате из корзины")
 @allure.step("Шаг 1: Открыть корзину")
 def step_checkout_open_cart():
@@ -56,13 +57,14 @@ def step_checkout_click():
 def step_checkout_verify_page():
     allure.attach("Страница оплаты загружена", name="Проверка страницы", attachment_type=AttachmentType.TEXT)
 
-def test_checkout_from_cart(): # ТЕСТ 3: НЕИЗВЕСТНЫЙ (Будет прерван)
-    time.sleep(10) # <-- ДОБАВЛЕНО: Задержка
+def test_checkout_from_cart(): # ТЕСТ 3: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
+    time.sleep(10) # <--- ОСТАВЛЕНО! (Для прерывания таймаутом)
     step_checkout_open_cart()
     step_checkout_click()
     step_checkout_verify_page()
     assert True, "Переход к оплате успешен"
 
+# --- ШАГИ ТЕСТА 4 ---
 @allure.title("Тест 4: Выбор метода оплаты")
 @allure.step("Шаг 1: Открыть страницу методов оплаты")
 def step_payment_method_open():
@@ -76,13 +78,14 @@ def step_payment_method_select():
 def step_payment_method_confirm():
     allure.attach("Метод подтверждён", name="Подтверждение", attachment_type=AttachmentType.TEXT)
 
-def test_select_payment_method(): # ТЕСТ 4: НЕИЗВЕСТНЫЙ (Будет прерван)
-    time.sleep(10) # <-- ДОБАВЛЕНО: Задержка
+def test_select_payment_method(): # ТЕСТ 4: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
+    time.sleep(10) # <--- ОСТАВЛЕНО!
     step_payment_method_open()
     step_payment_method_select()
     step_payment_method_confirm()
     assert True, "Метод оплаты выбран"
 
+# --- ШАГИ ТЕСТА 5 ---
 @allure.title("Тест 5: Подтверждение оплаты")
 @allure.step("Шаг 1: Ввести данные карты")
 def step_payment_enter_details():
@@ -96,8 +99,8 @@ def step_payment_submit():
 def step_payment_verify():
     allure.attach("Оплата успешна, заказ #12345", name="Подтверждение", attachment_type=AttachmentType.TEXT)
 
-def test_confirm_payment(): # ТЕСТ 5: НЕИЗВЕСТНЫЙ (Будет прерван)
-    time.sleep(10) # <-- ДОБАВЛЕНО: Задержка
+def test_confirm_payment(): # ТЕСТ 5: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
+    time.sleep(10) # <--- ОСТАВЛЕНО!
     step_payment_enter_details()
     step_payment_submit()
     step_payment_verify()
