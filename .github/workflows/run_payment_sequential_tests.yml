@@ -32,18 +32,23 @@ env:
   ALLURE_LAUNCH_NAME: ${{ github.event.inputs.ALLURE_LAUNCH_NAME }}
 
 jobs:
+  # -----------------------------------------------------------------
+  # JOB 1: УСПЕШНЫЙ И ПРОВАЛЕННЫЙ СТАТУСЫ (БЫСТРЫЕ ТЕСТЫ)
+  # -----------------------------------------------------------------
   run_allure_tests_part1:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Environment
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.Branch }}
-      - uses: actions/setup-python@v5
+
+      - name: Setup Python, Install dependencies
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt
+      
       - name: Setup AllureCTL
         uses: allure-framework/setup-allurectl@v1
         with:
@@ -54,33 +59,37 @@ jobs:
       - name: Run Job 1 (Success and Failed)
         run: |
           mkdir -p "${ALLURE_RESULTS}/part1"
-          # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: || true гарантирует, что Job 1 не провалится
+          # КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: || true гарантирует запуск Job 2
           allurectl watch -- pytest tests/test_payment.py::test_login_for_payment tests/test_payment.py::test_add_product_to_cart --alluredir="${ALLURE_RESULTS}/part1" || true
 
+  # -----------------------------------------------------------------
+  # JOB 2: НЕИЗВЕСТНЫЙ СТАТУС (ДОЛГИЕ ТЕСТЫ, БУДУТ ПРЕРВАНЫ)
+  # -----------------------------------------------------------------
   run_allure_tests_part2:
     runs-on: ubuntu-latest
-    needs: run_allure_tests_part1
+    needs: run_allure_tests_part1 
     timeout-minutes: 0.25 
-    
     steps:
-      - name: Setup Environment
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.Branch }}
-      - uses: actions/setup-python@v5
+          
+      - name: Setup Python, Install dependencies
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt
+      
       - name: Setup AllureCTL
         uses: allure-framework/setup-allurectl@v1
         with:
           allure-endpoint: ${{ env.ALLURE_ENDPOINT }}
           allure-token: ${{ env.ALLURE_TOKEN }}
           allure-project-id: ${{ env.ALLURE_PROJECT_ID }}
-      
+        
       - name: Run Job 2 (Unknown Status)
         run: |
           mkdir -p "${ALLURE_RESULTS}/part2"
-          # Запускаем Тесты 3, 4, 5 (они долгие и будут прерваны)
+          # Job будет прервана по таймауту
           allurectl watch -- pytest tests/test_payment.py::test_checkout_from_cart tests/test_payment.py::test_select_payment_method tests/test_payment.py::test_confirm_payment --alluredir="${ALLURE_RESULTS}/part2"
