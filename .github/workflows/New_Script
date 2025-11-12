@@ -1,4 +1,4 @@
-name: Allure TestOps Demo
+name: TestOps Demo
 
 on:
   workflow_dispatch:
