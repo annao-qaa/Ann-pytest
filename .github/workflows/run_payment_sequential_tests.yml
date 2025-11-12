@@ -6,9 +6,7 @@ on:
       ALLURE_JOB_RUN_ID:
         description: "TestOps service parameter for launch ID."
         required: false
-      ALLURE_USERNAME:
-        description: "TestOps service parameter for user identity."
-        required: false
+      # ... (Остальные inputs остаются без изменений)
       Branch:
         description: "Branch or Tag to run on."
         required: true
@@ -24,7 +22,8 @@ env:
   ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
   ALLURE_ENDPOINT: https://testing.qatools.cloud
   ALLURE_PROJECT_ID: 1878
-  ALLURE_RESULTS: build/allure-results
+  # Общая папка для результатов
+  ALLURE_RESULTS: build/allure-results 
 
   ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
   ALLURE_USERNAME: ${{ github.event.inputs.ALLURE_USERNAME }}
@@ -33,18 +32,17 @@ env:
 
 jobs:
   # -----------------------------------------------------------------
-  # JOB 1: УСПЕШНЫЙ И ПРОВАЛЕННЫЙ СТАТУСЫ (БЫСТРЫЕ ТЕСТЫ)
+  # JOB 1: БЫСТРЫЕ ТЕСТЫ (SUCCESS & FAILED)
+  # Эта Job ПРОВАЛИТСЯ из-за assert False, но Job 2 всё равно запустится.
   # -----------------------------------------------------------------
   run_allure_tests_part1:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Setup Environment
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.Branch }}
-
-      - name: Setup Python, Install dependencies, Setup AllureCTL
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - run: pip install -r requirements.txt
@@ -57,24 +55,24 @@ jobs:
       - name: Run Job 1 (Success and Failed)
         run: |
           mkdir -p "${ALLURE_RESULTS}/part1"
-          # Запуск Тестов 1 и 2 (УСПЕШНЫЙ и ПРОВАЛЕННЫЙ) - они БЫСТРЫЕ в Python-коде
+          # Запускаем Тесты 1 и 2
           allurectl watch -- pytest tests/test_payment.py::test_login_for_payment tests/test_payment.py::test_add_product_to_cart --alluredir="${ALLURE_RESULTS}/part1"
 
   # -----------------------------------------------------------------
-  # JOB 2: НЕИЗВЕСТНЫЙ СТАТУС (ДОЛГИЕ ТЕСТЫ, БУДУТ ПРЕРВАНЫ)
+  # JOB 2: ДОЛГИЕ ТЕСТЫ (UNKNOWN STATUS)
+  # Запустится, даже если Job 1 провалилась. Прервётся по таймауту.
   # -----------------------------------------------------------------
   run_allure_tests_part2:
     runs-on: ubuntu-latest
-    needs: run_allure_tests_part1 # Запускается после Job 1
-    timeout-minutes: 0.25 # <--- Таймаут в 15 секунд, чтобы прервать долгие тесты
+    needs: run_allure_tests_part1
+    timeout-minutes: 0.25 # Таймаут 15 секунд для прерывания
+    if: always() # <--- ЭТО ЗАПУСТИТ JOB 2, ДАЖЕ ЕСЛИ JOB 1 ПРОВАЛИТСЯ
     steps:
-      # Повторяем Setup, так как это отдельная Job
-      - name: Checkout repository
+      - name: Setup Environment
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.Branch }}
-      - name: Setup Python, Install dependencies, Setup AllureCTL
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - run: pip install -r requirements.txt
@@ -87,6 +85,5 @@ jobs:
       - name: Run Job 2 (Unknown Status)
         run: |
           mkdir -p "${ALLURE_RESULTS}/part2"
-          # Запуск Тестов 3, 4, 5 (НЕИЗВЕСТНЫЙ) - они ДОЛГИЕ (sleep 10s) в Python-коде
-          # Job будет прервана по таймауту, пока allurectl watch ждёт их завершения
+          # Запускаем Тесты 3, 4, 5 (с time.sleep(10))
           allurectl watch -- pytest tests/test_payment.py::test_checkout_from_cart tests/test_payment.py::test_select_payment_method tests/test_payment.py::test_confirm_payment --alluredir="${ALLURE_RESULTS}/part2"
