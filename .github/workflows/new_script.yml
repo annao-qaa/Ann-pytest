@@ -1,35 +1,36 @@
-name: Run tests and send results to Allure TestOps
+name: Allure TestOps Bug Repro  # ← ТОЧНО ДЛЯ ДЖОБЫ!
 
 on:
   workflow_dispatch:
     inputs:
       ALLURE_JOB_RUN_ID:
-        description: "TestOps service parameter for job run ID."
         required: false
         default: ""
       ALLURE_USERNAME:
-        description: "TestOps service parameter for user identity."
+        required: false
+        default: ""
+      ALLURE_TESTPLAN_PATH:
         required: false
         default: ""
 
 jobs:
-  run_all_tests:
+  run_tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Set up allurectl
+      - name: Setup allurectl
         uses: allure-framework/setup-allurectl@v1
         with:
           allure-endpoint: https://testing.qatools.cloud
@@ -39,20 +40,14 @@ jobs:
       - name: Clean results
         run: mkdir -p build/allure-results
 
-      - name: Generate testplan from all tests  # ← КЛЮЧ: 5 тестов сразу в TestOps
+      - name: Run tests
         env:
           ALLURE_RESULTS: build/allure-results
           ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}
+          ALLURE_TESTPLAN_PATH: ${{ github.event.inputs.ALLURE_TESTPLAN_PATH || '' }}
         run: |
-          # 1. Собираем все тесты (collect-only)
-          pytest tests/ --collect-only -q | grep "::" > /tmp/tests.list
-          # 2. Генерируем testplan.json и шлём в TestOps (резерв 5 мест)
-          allurectl testplan generate --results ${{ env.ALLURE_RESULTS }} --tests-file /tmp/tests.list
-
-      - name: Run tests via allurectl watch
-        env:
-          ALLURE_RESULTS: build/allure-results
-          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}
-        run: |
+          echo "JOB_RUN_ID: $ALLURE_JOB_RUN_ID"
+          echo "TESTPLAN_PATH: $ALLURE_TESTPLAN_PATH"
+          [ -n "$ALLURE_TESTPLAN_PATH" ] && cat $ALLURE_TESTPLAN_PATH
           allurectl watch --log debug --results ${{ env.ALLURE_RESULTS }} -- \
             pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }} --durations=0 || true
