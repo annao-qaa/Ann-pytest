@@ -31,7 +31,7 @@ jobs:
       - name: Run tests via allurectl
         run: |
           allurectl launch create --project-id 1878 --launch-name "GitHub Actions Run" --launch-tags "CI"
-          allurectl run -- pytest tests/ --alluredir=build/allure-results
+          allurectl run pytest tests/ --alluredir=build/allure-results
         env:
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
           ALLURE_ENDPOINT: https://testing.qatools.cloud
