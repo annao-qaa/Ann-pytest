@@ -6,14 +6,16 @@ on:
       ALLURE_JOB_RUN_ID:
         description: "TestOps service parameter for job run ID."
         required: false
+        default: ""
       ALLURE_USERNAME:
         description: "TestOps service parameter for user identity."
         required: false
+        default: ""
 
 jobs:
   run_all_tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 2  # Чтобы успеть Close Launch и получить Unknown
+    timeout-minutes: 3  # ← Для Unknown при Close Launch
 
     steps:
       - name: Checkout repository
@@ -25,28 +27,26 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install allure-pytest  # Если не в requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Set up allurectl
         uses: allure-framework/setup-allurectl@v1
         with:
           allure-endpoint: https://testing.qatools.cloud
-          allure-token: ${{ secrets.ALLURE_TOKEN }}
+          allure-token: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}  # ← ТВОЁ НАЗВАНИЕ
           allure-project-id: 1878
 
       - name: Clean results
         run: mkdir -p build/allure-results
 
-      - name: Run tests via allurectl watch
+      - name: Run tests via allurectl watch  # ← Заменил run + upload
         continue-on-error: true
         env:
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}  # ← ТВОЁ НАЗВАНИЕ
           ALLURE_ENDPOINT: https://testing.qatools.cloud
-          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
           ALLURE_PROJECT_ID: 1878
           ALLURE_RESULTS: build/allure-results
-          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}  # TestOps передаст при rerun, но мы не агрегируем — новая job run
+          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}
         run: |
           allurectl watch --results ${{ env.ALLURE_RESULTS }} -- \
-            pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }}
+            pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }} --durations=0
