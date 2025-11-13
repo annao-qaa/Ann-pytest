@@ -58,7 +58,7 @@ def step_checkout_verify_page():
     allure.attach("Страница оплаты загружена", name="Проверка страницы", attachment_type=AttachmentType.TEXT)
 
 def test_checkout_from_cart(): # ТЕСТ 3: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
-    time.sleep(10) # <--- ОСТАВЛЕНО! (Для прерывания таймаутом)
+    time.sleep(90) # <--- ОСТАВЛЕНО! (Для прерывания таймаутом)
     step_checkout_open_cart()
     step_checkout_click()
     step_checkout_verify_page()
@@ -79,7 +79,7 @@ def step_payment_method_confirm():
     allure.attach("Метод подтверждён", name="Подтверждение", attachment_type=AttachmentType.TEXT)
 
 def test_select_payment_method(): # ТЕСТ 4: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
-    time.sleep(10) # <--- ОСТАВЛЕНО!
+    time.sleep(90) # <--- ОСТАВЛЕНО!
     step_payment_method_open()
     step_payment_method_select()
     step_payment_method_confirm()
@@ -100,7 +100,7 @@ def step_payment_verify():
     allure.attach("Оплата успешна, заказ #12345", name="Подтверждение", attachment_type=AttachmentType.TEXT)
 
 def test_confirm_payment(): # ТЕСТ 5: НЕИЗВЕСТНЫЙ (ДОЛГИЙ, Job 2)
-    time.sleep(10) # <--- ОСТАВЛЕНО!
+    time.sleep(90) # <--- ОСТАВЛЕНО!
     step_payment_enter_details()
     step_payment_submit()
     step_payment_verify()
