@@ -1,4 +1,4 @@
-name: Run tests and send results to TestOps
+name: Run tests and send results to Allure TestOps
 
 on:
   push:
