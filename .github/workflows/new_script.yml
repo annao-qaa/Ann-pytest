@@ -1,67 +1,52 @@
-name: TestOps Demo
+name: Run tests and send results to Allure TestOps
 
 on:
   workflow_dispatch:
     inputs:
-      # Служебные параметры, обязательные для TestOps (required: false)
       ALLURE_JOB_RUN_ID:
-        description: "TestOps service parameter for launch ID."
+        description: "TestOps service parameter for job run ID."
         required: false
       ALLURE_USERNAME:
         description: "TestOps service parameter for user identity."
         required: false
 
-      Branch:
-        description: "Branch or Tag to run on."
-        required: true
-        default: 'main'
-
-      ALLURE_LAUNCH_ID:
-        description: "Launch ID for filtering (optional)."
-        required: false
-      ALLURE_LAUNCH_NAME:
-        description: "Launch name for filtering (optional)."
-        required: false
-
-env:
-  ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
-  ALLURE_ENDPOINT: https://testing.qatools.cloud
-  ALLURE_PROJECT_ID: 1878
-  ALLURE_RESULTS: build/allure-results
-
-  ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
-  ALLURE_USERNAME: ${{ github.event.inputs.ALLURE_USERNAME }}
-  ALLURE_LAUNCH_ID: ${{ github.event.inputs.ALLURE_LAUNCH_ID }}
-  ALLURE_LAUNCH_NAME: ${{ github.event.inputs.ALLURE_LAUNCH_NAME }}
-
 jobs:
-  run_allure_tests:
+  run_all_tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 2  # Чтобы успеть Close Launch и получить Unknown
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.Branch }}
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Setup AllureCTL
-        uses: allure-framework/setup-allurectl@v1
-        id: allurectl
-        with:
-          allure-endpoint: ${{ env.ALLURE_ENDPOINT }}
-          allure-token: ${{ env.ALLURE_TOKEN }}
-          allure-project-id: ${{ env.ALLURE_PROJECT_ID }}
-
-      - name: Run tests (using allurectl watch)
-        id: run_tests
         run: |
-          mkdir -p "${ALLURE_RESULTS}"
-          # Keep exit code so test failures make the job fail
-          allurectl watch -- pytest --alluredir="${ALLURE_RESULTS}"
+          pip install -r requirements.txt
+          pip install allure-pytest  # Если не в requirements.txt
+
+      - name: Set up allurectl
+        uses: allure-framework/setup-allurectl@v1
+        with:
+          allure-endpoint: https://testing.qatools.cloud
+          allure-token: ${{ secrets.ALLURE_TOKEN }}
+          allure-project-id: 1878
+
+      - name: Clean results
+        run: mkdir -p build/allure-results
+
+      - name: Run tests via allurectl watch
+        continue-on-error: true
+        env:
+          ALLURE_ENDPOINT: https://testing.qatools.cloud
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_PROJECT_ID: 1878
+          ALLURE_RESULTS: build/allure-results
+          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}  # TestOps передаст при rerun, но мы не агрегируем — новая job run
+        run: |
+          allurectl watch --results ${{ env.ALLURE_RESULTS }} -- \
+            pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }}
