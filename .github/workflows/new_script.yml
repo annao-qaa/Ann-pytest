@@ -39,10 +39,20 @@ jobs:
       - name: Clean results
         run: mkdir -p build/allure-results
 
+      - name: Generate testplan from all tests  # ← КЛЮЧ: 5 тестов сразу в TestOps
+        env:
+          ALLURE_RESULTS: build/allure-results
+          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}
+        run: |
+          # 1. Собираем все тесты (collect-only)
+          pytest tests/ --collect-only -q | grep "::" > /tmp/tests.list
+          # 2. Генерируем testplan.json и шлём в TestOps (резерв 5 мест)
+          allurectl testplan generate --results ${{ env.ALLURE_RESULTS }} --tests-file /tmp/tests.list
+
       - name: Run tests via allurectl watch
         env:
           ALLURE_RESULTS: build/allure-results
-          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}  # ← TestOps передаст
+          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}
         run: |
           allurectl watch --log debug --results ${{ env.ALLURE_RESULTS }} -- \
             pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }} --durations=0 || true
