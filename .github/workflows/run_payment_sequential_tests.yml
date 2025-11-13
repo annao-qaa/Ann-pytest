@@ -1,83 +1,47 @@
-name: TestOps Demo (Mixed Results)
+name: Run tests and send results to TestOps
 
 on:
-  workflow_dispatch:
-    inputs:
-      ALLURE_JOB_RUN_ID:
-        description: "TestOps service parameter for launch ID."
-        required: false
-      ALLURE_USERNAME:
-        description: "TestOps service parameter for user identity."
-        required: false
-      Branch:
-        description: "Branch or Tag to run on."
-        required: true
-        default: 'main'
-      ALLURE_LAUNCH_ID:
-        description: "Launch ID for filtering (optional)."
-        required: false
-      ALLURE_LAUNCH_NAME:
-        description: "Launch name for filtering (optional)."
-        required: false
-
-env:
-  ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN_FOR_SELFHOSTED }}
-  ALLURE_ENDPOINT: https://testing.qatools.cloud
-  ALLURE_PROJECT_ID: 1878
-  ALLURE_RESULTS: build/allure-results
-
-  ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
-  ALLURE_USERNAME: ${{ github.event.inputs.ALLURE_USERNAME }}
-  ALLURE_LAUNCH_ID: ${{ github.event.inputs.ALLURE_LAUNCH_ID }}
-  ALLURE_LAUNCH_NAME: ${{ github.event.inputs.ALLURE_LAUNCH_NAME }}
+  push:
+    branches:
+      - main
 
 jobs:
   run_all_tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.Branch }}
 
-      - name: Setup Python and install dependencies
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: pip install -r requirements.txt
 
-      - name: Setup AllureCTL
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up allurectl
         uses: allure-framework/setup-allurectl@v1
         with:
-          allure-endpoint: ${{ env.ALLURE_ENDPOINT }}
-          allure-token: ${{ env.ALLURE_TOKEN }}
-          allure-project-id: ${{ env.ALLURE_PROJECT_ID }}
+          allure-endpoint: https://testing.qatools.cloud
+          allure-token: ${{ secrets.ALLURE_TOKEN }}
+          allure-project-id: 1878
 
-      - name: Run tests with mixed outcomes
+      - name: Run tests via allurectl
         run: |
-          mkdir -p "${ALLURE_RESULTS}/part1" "${ALLURE_RESULTS}/part2"
+          allurectl launch create --project-id 1878 --launch-name "GitHub Actions Run" --launch-tags "CI"
+          allurectl run -- pytest tests/ --alluredir=build/allure-results
+        env:
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_ENDPOINT: https://testing.qatools.cloud
+          ALLURE_PROJECT_ID: 1878
+          ALLURE_RESULTS: build/allure-results
 
-          # --- Part 1: успешный и упавший тест ---
-          echo "=== Running Job 1 (PASS + FAIL) ==="
-          allurectl watch -- pytest \
-            tests/test_payment.py::test_login_for_payment \
-            tests/test_payment.py::test_add_product_to_cart \
-            --alluredir="${ALLURE_RESULTS}/part1" || true
-
-          # --- Part 2: тест с неизвестным статусом + 2 любых ---
-          echo "=== Running Job 2 (UNKNOWN + others) ==="
-          # Тесты в этом блоке: один из них зависает/прерывается → broken
-          timeout 5s allurectl watch -- pytest \
-            tests/test_payment.py::test_checkout_from_cart \
-            tests/test_payment.py::test_select_payment_method \
-            tests/test_payment.py::test_confirm_payment \
-            --alluredir="${ALLURE_RESULTS}/part2" || true
-
-      - name: Merge and upload all results to TestOps
-        run: |
-          echo "=== Merging results ==="
-          allurectl results merge "${ALLURE_RESULTS}/part1" "${ALLURE_RESULTS}/part2" --output "${ALLURE_RESULTS}"
-          echo "=== Uploading merged results ==="
-          allurectl results upload "${ALLURE_RESULTS}" --launch-name "Mixed Results Demo" || true
+      - name: Upload results to Allure TestOps
+        if: always()
+        run: allurectl upload build/allure-results
+        env:
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_ENDPOINT: https://testing.qatools.cloud
+          ALLURE_PROJECT_ID: 1878
