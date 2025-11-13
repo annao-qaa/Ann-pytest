@@ -15,7 +15,7 @@ on:
 jobs:
   run_all_tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # ← 3 мин sleep + буфер
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -42,7 +42,7 @@ jobs:
       - name: Run tests via allurectl watch
         env:
           ALLURE_RESULTS: build/allure-results
-          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}  # ← Правильная настройка (TestOps передаст при rerun)
+          ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID || '' }}  # ← TestOps передаст
         run: |
           allurectl watch --log debug --results ${{ env.ALLURE_RESULTS }} -- \
             pytest tests/ -v --alluredir=${{ env.ALLURE_RESULTS }} --durations=0 || true
